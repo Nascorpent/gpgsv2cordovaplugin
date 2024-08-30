@@ -9,10 +9,16 @@
     <platform name="android">
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="GooglePlayGamesV2">
-                <param name="android-package" value="com.nascorpent.googleplaygamesv2plugin.GooglePlayGamesV2" />
+                <param name="android-package" value="com.nascorpent.googleplaygamesv2plugin" />
             </feature>
         </config-file>
+        <config-file parent="/manifest/application"target="AndroidManifest.xml">
+            <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/game_services_project_id" />
+        </config-file>
         <source-file src="src/android/GooglePlayGamesV2.java" target-dir="src/com/nascorpent/googleplaygamesv2plugin" />
+        <resource-file src="src/android/res/values/games-ids.xml" target="res/values/games-ids.xml" />
         <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference" />
+        <uses-permission android:name="android.permission.INTERNET" />
+        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     </platform>
 </plugin>
