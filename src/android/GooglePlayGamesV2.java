@@ -45,15 +45,22 @@ public class GooglePlayGamesV2 extends CordovaPlugin {
 
     private void signInSilently(CallbackContext callbackContext) {
         GamesSignInClient gamesSignInClient = PlayGames.getGamesSignInClient(cordova.getActivity());
-
+    
         gamesSignInClient.isAuthenticated().addOnCompleteListener(isAuthenticatedTask -> {
             boolean isAuthenticated = (isAuthenticatedTask.isSuccessful() &&
                     isAuthenticatedTask.getResult().isAuthenticated());
-
+    
             if (isAuthenticated) {
-                String playerId = Games.getPlayersClient(cordova.getActivity()).getCurrentPlayerId();
-                callbackContext.success(playerId);
-            } else {
+                PlayGames.getPlayersClient(cordova.getActivity()).getCurrentPlayer()
+                        .addOnCompleteListener(playerTask -> {
+                            if (playerTask.isSuccessful()) {
+                                String playerId = playerTask.getResult().getPlayerId();
+                                callbackContext.success(playerId);
+                            } else {
+                                callbackContext.error("signInSilently:failed to get player ID");
+                            }
+                        });
+            } else{
                 callbackContext.error("signInSilently:failed");
             }
         });
