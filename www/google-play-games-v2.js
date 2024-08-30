@@ -1,11 +1,11 @@
 var exec = require('cordova/exec');
 
-exports.loginSilently = function (success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'loginSilently', []);
+exports.signInSilently = function (success, error) {
+    exec(success, error, 'GooglePlayGamesV2', 'signInSilently', []);
 };
 
-exports.logout = function (success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'logout', []);
+exports.signOut = function (success, error) {
+    exec(success, error, 'GooglePlayGamesV2', 'signOut', []);
 };
 
 exports.saveGame = function (data, success, error) {

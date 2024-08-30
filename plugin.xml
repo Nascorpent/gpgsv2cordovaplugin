@@ -4,14 +4,15 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
     <name>Google Play Games V2 Plugin</name>
     <js-module name="google-play-games-v2" src="www/google-play-games-v2.js">
-        <clobbers target="cordova.plugins.googleplaygamesv2plugin" />
+        <clobbers target="cordova.plugins.googleplaygamesv2" />
     </js-module>
     <platform name="android">
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="GooglePlayGamesV2">
-                <param name="android-package" value="com.nascorpent.googleplaygamesv2plugin" />
+                <param name="android-package" value="com.nascorpent.googleplaygamesv2plugin.GooglePlayGamesV2" />
             </feature>
         </config-file>
         <source-file src="src/android/GooglePlayGamesV2.java" target-dir="src/com/nascorpent/googleplaygamesv2plugin" />
+        <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference" />
     </platform>
 </plugin>
