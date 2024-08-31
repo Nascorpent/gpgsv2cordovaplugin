@@ -12,7 +12,7 @@
                 <param name="android-package" value="com.nascorpent.googleplaygamesv2plugin" />
             </feature>
         </config-file>
-        <config-file parent="/manifest/application"target="AndroidManifest.xml">
+        <config-file parent="/manifest/application" target="AndroidManifest.xml">
             <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/game_services_project_id" />
         </config-file>
         <source-file src="src/android/GooglePlayGamesV2.java" target-dir="src/com/nascorpent/googleplaygamesv2plugin" />
