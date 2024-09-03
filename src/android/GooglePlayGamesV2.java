@@ -1,5 +1,6 @@
 package com.nascorpent.googleplaygamesv2plugin;
 
+import org.apache.cordova.*;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
@@ -25,8 +26,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 
-import java.io.IOException; // Importação necessária para IOException
-
+import java.io.IOException;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 import androidx.annotation.NonNull;

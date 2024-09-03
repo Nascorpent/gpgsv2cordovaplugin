@@ -1,21 +1,38 @@
-var exec = require('cordova/exec');
+cordova.define("cordova-plugin-google-play-games-v2.google-play-games-v2", function(require, exports, module) {
+  var exec = require('cordova/exec');
 
-exports.signInSilently = function (success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'signInSilently', []);
-};
-
-exports.signIn = function (success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'signIn', []);
+  // Faz login silencioso no Play Games Services.
+  exports.signInSilently = function () {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, 'GooglePlayGamesV2', 'signInSilently', []);
+    });
   };
 
-exports.signOut = function (success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'signOut', []);
-};
-
-exports.saveGame = function (snapshotName, data, coverImage, description, timestamp, success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'saveGame', [snapshotName, data, coverImage, description, timestamp]);
+  // Faz login interativo no Play Games Services.
+  exports.signIn = function () {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, 'GooglePlayGamesV2', 'signIn', []);
+    });
   };
 
-  exports.loadGame = function (snapshotName, success, error) {
-    exec(success, error, 'GooglePlayGamesV2', 'loadGame', [snapshotName]);
-};
+  // Faz logout do Play Games Services.
+  exports.signOut = function () {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, 'GooglePlayGamesV2', 'signOut', []);
+    });
+  };
+
+  // Salva o jogo no Play Games Services.
+  exports.saveGame = function (snapshotName, data, coverImage, description, timestamp) {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, 'GooglePlayGamesV2', 'saveGame', [snapshotName, data, coverImage, description, timestamp]);
+    });
+  };
+
+  // Carrega o jogo do Play Games Services.
+  exports.loadGame = function (snapshotName) {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, 'GooglePlayGamesV2', 'loadGame', [snapshotName]);
+    });
+  };
+});
