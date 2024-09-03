@@ -4,11 +4,14 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
-import com.google.android.gms.games.Games;
 import com.google.android.gms.games.PlayGames;
 import com.google.android.gms.games.GamesSignInClient;
 import com.google.android.gms.games.PlayGamesSdk;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
@@ -20,10 +23,14 @@ import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import org.json.JSONObject;
+import com.google.android.gms.tasks.Tasks;
+
+import java.io.IOException; // Importação necessária para IOException
+
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 import androidx.annotation.NonNull;
+
 
 public class GooglePlayGamesV2 extends CordovaPlugin {
 
@@ -79,7 +86,7 @@ public class GooglePlayGamesV2 extends CordovaPlugin {
                                 }
                             });
                 } else {
-                    callbackContext.error("signInSilently:failed");
+                    callbackContext.error("signInSilently:failed to sign in silently");
                 }
             } else {
                 callbackContext.error("signInSilently:failed");
@@ -107,89 +114,112 @@ public class GooglePlayGamesV2 extends CordovaPlugin {
     }
 
     private void signOut(CallbackContext callbackContext) {
-        PlayGames.signOut(cordova.getActivity()); // Correção: signOut agora é um método estático de PlayGames
-        callbackContext.success(); // Chame success após signOut
+        GoogleSignInClient googleSignInClient = GoogleSignIn.getClient(cordova.getActivity(),
+                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+
+        googleSignInClient.signOut()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        callbackContext.success();
+                    } else {
+                        callbackContext.error("signOut:failed");
+                    }
+                });
     }
 
     private void saveGame(JSONArray args, CallbackContext callbackContext) throws JSONException {
-        String snapshotName = args.getString(0);String data = args.getString(1);
-        String coverImage = args.getString(2); // Base64 da imagem da capa
+        String snapshotName = args.getString(0);
+        String data = args.getString(1);
+        String coverImage = args.getString(2);
         String description = args.getString(3);
         long timestamp = args.getLong(4);
-    
+
         SnapshotsClient snapshotsClient = PlayGames.getSnapshotsClient(cordova.getActivity());
-    
+
         snapshotsClient.open(snapshotName, true, SnapshotsClient.RESOLUTION_POLICY_MOST_RECENTLY_MODIFIED)
-                .continueWith(new Continuation<SnapshotsClient.DataOrConflict<Snapshot>, Task<SnapshotMetadata>>() {
+                .continueWithTask(new Continuation<SnapshotsClient.DataOrConflict<Snapshot>, Task<SnapshotMetadata>>() {
                     @Override
                     public Task<SnapshotMetadata> then(@NonNull Task<SnapshotsClient.DataOrConflict<Snapshot>> task) throws Exception {
+                        if (!task.isSuccessful()) {
+                            throw task.getException();
+                        }
+
                         SnapshotsClient.DataOrConflict<Snapshot> result = task.getResult();
-    
                         Snapshot snapshot = result.getData();
+
                         snapshot.getSnapshotContents().writeBytes(data.getBytes());
-    
-                        SnapshotMetadataChange metadataChange = new SnapshotMetadataChange.Builder()
+
+                        SnapshotMetadataChange.Builder metadataChangeBuilder = new SnapshotMetadataChange.Builder()
                                 .fromMetadata(snapshot.getMetadata())
                                 .setDescription(description)
-                                .setPlayedTimeMillis(timestamp)
-                                .build();
-    
+                                .setPlayedTimeMillis(timestamp);
+
                         if (!coverImage.isEmpty()) {
-                            byte[] imageBytes = Base64.decode(coverImage, Base64.DEFAULT);
-                            metadataChange = new SnapshotMetadataChange.Builder()
-                                    .fromMetadata(snapshot.getMetadata())
-                                    .setCoverImage(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length))
-                                    .build();
+                            try {
+                                byte[] imageBytes = Base64.decode(coverImage, Base64.DEFAULT);
+                                metadataChangeBuilder.setCoverImage(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length));
+                            } catch (IllegalArgumentException e) {
+                                throw new RuntimeException("Failed to decode cover image", e);
+                            }
                         }
-    
+
+                        SnapshotMetadataChange metadataChange = metadataChangeBuilder.build();
                         return snapshotsClient.commitAndClose(snapshot, metadataChange);
                     }
                 })
-                .addOnCompleteListener(new OnCompleteListener<Task<SnapshotMetadata>>() { // Alterar o tipo aqui
+                .addOnCompleteListener(new OnCompleteListener<SnapshotMetadata>() {
                     @Override
                     public void onComplete(@NonNull Task<SnapshotMetadata> task) {
                         if (task.isSuccessful()) {
                             callbackContext.success();
                         } else {
-                            callbackContext.error("saveGame:failed");
+                            Exception e = task.getException();
+                            String errorMessage = "saveGame:failed - " + e.getMessage();
+                            callbackContext.error(errorMessage);
                         }
                     }
                 });
     }
 
+
     private void loadGame(JSONArray args, CallbackContext callbackContext) throws JSONException {
         String snapshotName = args.getString(0);
-    
+
         SnapshotsClient snapshotsClient = PlayGames.getSnapshotsClient(cordova.getActivity());
-    
+
         snapshotsClient.open(snapshotName, false, 0)
-                .continueWith(new Continuation<SnapshotsClient.DataOrConflict<Snapshot>, Task<Snapshot>>() {
+                .continueWithTask(new Continuation<SnapshotsClient.DataOrConflict<Snapshot>, Task<Snapshot>>() {
                     @Override
                     public Task<Snapshot> then(@NonNull Task<SnapshotsClient.DataOrConflict<Snapshot>> task) throws Exception {
+                        if (!task.isSuccessful()) {
+                            throw task.getException();
+                        }
+
                         Snapshot snapshot = task.getResult().getData();
-                        return snapshotsClient.load(snapshot.getMetadata()); // Passar SnapshotMetadata para load
+                        return Tasks.forResult(snapshot);
                     }
                 })
-                .continueWith(new Continuation<Snapshot, byte[]>() { // Adicionar continueWith para obter bytes
+                .addOnCompleteListener(new OnCompleteListener<Snapshot>() {
                     @Override
-                    public byte[] then(@NonNull Task<Snapshot> task) throws Exception {
-                        return task.getResult().getSnapshotContents().readFully();
-                    }
-                })
-                .addOnCompleteListener(new OnCompleteListener<byte[]>() {
-                    @Override
-                    public void onComplete(@NonNull Task<byte[]> task) {
+                    public void onComplete(@NonNull Task<Snapshot> task) {
                         if (task.isSuccessful()) {
                             try {
-                                byte[] data = task.getResult();
-                                if (data != null) {
-                                    String dataString = new String(data);
-                                    JSONObject json = new JSONObject();
-                                    json.put("data", dataString);
-                                    callbackContext.success(json);
-                                } else{
-                                    callbackContext.error("loadGame:failed - no data found");
+                                Snapshot snapshot = task.getResult();
+                                byte[] data;
+                                try {
+                                    data = snapshot.getSnapshotContents().readFully();
+                                } catch (IOException e) {
+                                    callbackContext.error("loadGame:failed to read snapshot data - " + e.getMessage());
+                                    return;
                                 }
+
+                                JSONObject result = new JSONObject();
+                                result.put("data", new String(data));
+                                result.put("coverImage", snapshot.getMetadata().getCoverImageUri() != null ? snapshot.getMetadata().getCoverImageUri().toString() : "");
+                                result.put("description", snapshot.getMetadata().getDescription());
+                                result.put("timestamp", snapshot.getMetadata().getLastModifiedTimestamp());
+
+                                callbackContext.success(result);
                             } catch (JSONException e) {
                                 callbackContext.error("loadGame:failed to parse data - " + e.getMessage());
                             }
