@@ -1,3 +1,5 @@
+  
+  
   function callPlugin(name, params, onSuccess, onFailure) {
     cordova.exec(
       function callPluginSuccess(result) {
@@ -31,6 +33,9 @@
       callPlugin('loadGame', [snapshotName], resolve, reject);
     });
   };
+
+  const EVENT_PLUGIN_ERROR = 'pluginError';
+  const EVENT_PLUGIN_SUCCESS = 'pluginSuccess';
 
   window.addEventListener(EVENT_PLUGIN_ERROR, function(event) {
     var error = event.detail;
