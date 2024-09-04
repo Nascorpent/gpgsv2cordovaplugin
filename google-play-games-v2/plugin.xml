@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordovaplugingpgsv2" version="0.0.1"
+    xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    >
+    <name>Google Play Games V2 Plugin by Nascorpent</name>
+
+    <js-module name="cordovaplugingpgsv2" src="www/cordovaplugingpgsv2.js">
+        <clobbers target="GPGSv2" />
+    </js-module>
+
+    <engines>
+        <engine name="cordova" version=">=9.0" />
+        <engine name="cordova-android" version=">=9.0.0" />
+    </engines>
+
+    <platform name="android">
+
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="cordovaplugingpgsv2">
+                <param name="android-package" value="com.nascorpent.cordovaplugingpgsv2" />
+            </feature>
+        </config-file>
+        
+        <config-file parent="/manifest" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        </config-file>
+
+        <config-file parent="/manifest/application" target="AndroidManifest.xml">
+            <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/game_services_project_id" />
+            <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
+        </config-file>
+
+        <source-file src="src/android/cordovaplugingpgsv2.java" target-dir="src/com/nascorpent" />
+
+        <resource-file src="src/android/res/values/games-ids.xml" target="res/values/games-ids.xml" />
+
+        <framework src="src/android/cordovaplugingpgsv2.gradle" custom="true" type="gradleReference" />
+
+        <framework src="com.android.support:support-v4:+" />
+
+        <framework src="com.android.support:recyclerview-v7:27.1.1" />
+
+    </platform>
+</plugin>
