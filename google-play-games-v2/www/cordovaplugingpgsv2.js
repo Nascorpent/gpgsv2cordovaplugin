@@ -1,3 +1,4 @@
+cordova.define("cordovaplugingpgsv2.cordovaplugingpgsv2", function(require, exports, module) {
   
   
   function callPlugin(name, params, onSuccess, onFailure) {
@@ -21,6 +22,11 @@
       callPlugin('signIn', [], resolve, reject);
     });
   };
+
+  exports.getPlayerId = function () {return new Promise(function (resolve, reject) {
+        callPlugin('getPlayerId', [], resolve, reject);
+      });
+    };
 
   exports.saveGame = function (snapshotName, data, description, timestamp) {
     return new Promise(function (resolve, reject) {
@@ -48,3 +54,5 @@
       // Lógica para lidar com o sucesso
     }
   }
+
+});

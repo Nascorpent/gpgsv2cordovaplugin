@@ -1,5 +1,7 @@
 package com.nascorpent;
 
+import android.util.Log;
+
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaPlugin;
@@ -23,8 +25,8 @@ import java.lang.Runnable;
 
 public class cordovaplugingpgsv2 extends CordovaPlugin {
 
-    private static final String EVENT_PLUGIN_ERROR = "pluginError";
-    private static final String EVENT_PLUGIN_SUCCESS = "pluginSuccess";
+    private static final String EVENT_PLUGIN_ERROR = "GPG_pluginError";
+    private static final String EVENT_PLUGIN_SUCCESS = "GPG_pluginSuccess";
     private CordovaWebView cordovaWebView;
 
     @Override
@@ -41,6 +43,9 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         switch (action) {
             case "signIn":
                 this.signIn(callbackContext);
+                return true;
+            case "getPlayerId":
+                this.getPlayerId(callbackContext);
                 return true;
             case "saveGame":
                 this.saveGame(args, callbackContext);
@@ -63,15 +68,14 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                     boolean isAuthenticated = isAuthenticatedTask.getResult().isAuthenticated();
 
                     if (isAuthenticated) {
-                        // Usuário já autenticado, obtendo ID do jogador
-                        getPlayerId(callbackContext);
-                        sendSuccessToJavascript(callbackContext, "signIn", "Sign-in successful");
+                        // Usuário já autenticado
+                        callbackContext.success("1");
+                        sendSuccessToJavascript(callbackContext, "signIn", "User already authenticated");
                     } else {
                         // Usuário não autenticado, iniciando o login interativo
                         gamesSignInClient.signIn().addOnCompleteListener(signInTask -> {
                             if (signInTask.isSuccessful()) {
-                                // Login bem-sucedido, obtendo ID do jogador
-                                getPlayerId(callbackContext);
+                                callbackContext.success("2");
                                 sendSuccessToJavascript(callbackContext, "signIn", "Sign-in successful");
                             } else {
                                 getSignInError(callbackContext, signInTask.getException());
@@ -90,11 +94,13 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 .addOnCompleteListener(playerTask -> {
                     if (playerTask.isSuccessful()) {
                         String playerId = playerTask.getResult().getPlayerId();
+                        String displayName = playerTask.getResult().getDisplayName();
                         // ID do jogador obtido com sucesso
                         try {
-                            JSONObject result = new JSONObject();
-                            result.put("id", playerId);
-                            callbackContext.success(result);
+                            JSONObject playerData = new JSONObject();
+                            playerData.put("playerId", playerId);
+                            playerData.put("displayName", displayName);
+                            callbackContext.success(playerData);
                             sendSuccessToJavascript(callbackContext, "getPlayerId", "Player ID retrieved successfully");
                         } catch (JSONException e) {
                             sendErrorToJavascript(callbackContext, "getPlayerId", e);
@@ -162,7 +168,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                                 .fromMetadata(snapshot.getMetadata())
                                 .setDescription(description)
                                 .setPlayedTimeMillis(timestamp)
-                                .build(); 
+                                .build();
 
                         return snapshotsClient.commitAndClose(snapshot, metadataChange);
                     })
@@ -220,7 +226,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             JSONObject error = new JSONObject();
             error.put("message", methodName + ": " + exception.getMessage());
             emitWindowEvent(EVENT_PLUGIN_ERROR, error); // Envia o evento de erro
-            //callbackContext.error(error); // Mantém o callbackContext.error para compatibilidade
+//            callbackContext.error(error); // Mantém o callbackContext.error para compatibilidade
         } catch (JSONException e) {
             // Falha ao criar objeto JSON para erro
             callbackContext.error(methodName + ": Failed to create error message");
@@ -232,7 +238,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             JSONObject success = new JSONObject();
             success.put("message", methodName + ": " + message);
             emitWindowEvent(EVENT_PLUGIN_SUCCESS, success); // Envia o evento de sucesso
-            //callbackContext.success(success);
+//            callbackContext.success(success);
         } catch (JSONException e) {
             // Falha ao criar objeto JSON para sucesso
             callbackContext.error(methodName + ": Failed to create success message");
