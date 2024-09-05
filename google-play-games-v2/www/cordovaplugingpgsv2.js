@@ -22,9 +22,9 @@
     });
   };
 
-  exports.saveGame = function (snapshotName, data, coverImage, description, timestamp) {
+  exports.saveGame = function (snapshotName, data, description, timestamp) {
     return new Promise(function (resolve, reject) {
-      callPlugin('saveGame', [snapshotName, data, coverImage, description, timestamp], resolve, reject);
+      callPlugin('saveGame', [snapshotName, data, description, timestamp], resolve, reject);
     });
   };
 

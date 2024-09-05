@@ -141,9 +141,8 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
     private void saveGame(JSONArray args, CallbackContext callbackContext) throws JSONException {
         String snapshotName = args.getString(0);
         String data = args.getString(1);
-        String coverImage = args.getString(2);
-        String description = args.getString(3);
-        long timestamp = args.getLong(4);
+        String description = args.getString(2);
+        long timestamp = args.getLong(3);
 
         cordova.getActivity().runOnUiThread(() -> {
             Log.d(TAG, "saveGame: Saving game with snapshotName = " + snapshotName);
@@ -166,22 +165,15 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                         snapshot.getSnapshotContents().writeBytes(data.getBytes());
                         Log.d(TAG, "saveGame: Snapshot data written");
 
-                        SnapshotMetadataChange.Builder metadataChangeBuilder = new SnapshotMetadataChange.Builder()
+                        snapshot.getSnapshotContents().writeBytes(data.getBytes());
+                        Log.d(TAG, "saveGame: Snapshot data written");
+
+                        SnapshotMetadataChange metadataChange = new SnapshotMetadataChange.Builder()
                                 .fromMetadata(snapshot.getMetadata())
                                 .setDescription(description)
-                                .setPlayedTimeMillis(timestamp);
+                                .setPlayedTimeMillis(timestamp)
+                                .build(); // Removido o código relacionado à coverImage
 
-                        if (!coverImage.isEmpty()) {
-                            try {
-                                byte[] imageBytes = Base64.decode(coverImage, Base64.DEFAULT);
-                                metadataChangeBuilder.setCoverImage(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length));
-                                Log.d(TAG, "saveGame: Cover image set");
-                            } catch (IllegalArgumentException e) {
-                                sendErrorToJavascript(callbackContext, "saveGame", e);
-                            }
-                        }
-
-                        SnapshotMetadataChange metadataChange = metadataChangeBuilder.build();
                         return snapshotsClient.commitAndClose(snapshot, metadataChange);
                     })
                     .addOnCompleteListener(task -> {
