@@ -34,17 +34,17 @@
     });
   };
 
-  const EVENT_PLUGIN_ERROR = 'pluginError';
-  const EVENT_PLUGIN_SUCCESS = 'pluginSuccess';
+  window.addEventListener('GPG_pluginError', handlePluginEvent);
+  window.addEventListener('GPG_pluginSuccess', handlePluginEvent);
 
-  window.addEventListener(EVENT_PLUGIN_ERROR, function(event) {
-    var error = event.detail;
-    console.error(error.message); // Exibe a mensagem de erro no console
-    // Lógica adicional paralidar com o erro, se necessário
-  });
-
-  window.addEventListener(EVENT_PLUGIN_SUCCESS, function(event) {
-    var success = event.detail;
-    console.log(success.message); // Exibe a mensagem de sucesso no console
-    // Lógica adicional para lidar com o sucesso, se necessário
-  });
+  function handlePluginEvent(event) {
+    if (event.type === 'GPG_pluginError') {
+      var error = event;
+      console.error(error.message); // Exibe a mensagem de erro no console
+      // Lógica para lidar com o erro
+    } else if(event.type === 'GPG_pluginSuccess') {
+      var success = event;
+      console.log(success.message); // Exibe a mensagem de sucesso no console
+      // Lógica para lidar com o sucesso
+    }
+  }
