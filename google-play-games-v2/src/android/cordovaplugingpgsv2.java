@@ -1,7 +1,5 @@
 package com.nascorpent;
 
-import android.util.Log;
-
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaPlugin;
