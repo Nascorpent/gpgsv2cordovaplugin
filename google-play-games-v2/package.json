@@ -1,7 +1,7 @@
 {
     "name": "cordovaplugingpgsv2",
-    "version": "1.0.1",
-    "description": "A Cordova plugin for Google Play Games Services v2",
+    "version": "1.0.2",
+    "description": "A Cordova plugin for Google Play Games Services v2, Construct 3",
     
     "author": "NascorpEnt",
     "license": "MIT",

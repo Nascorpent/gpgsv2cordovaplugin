@@ -6,9 +6,11 @@
     >
     <name>Google Play Games V2 Plugin by Nascorpent</name>
 
-    <js-module name="cordovaplugingpgsv2" src="www/cordovaplugingpgsv2.js">
-        <clobbers target="GPGSv2" />
-    </js-module>
+
+//O Construct 3 já cria o módulo ao instalar o plugin no projeto.
+//    <js-module name="cordovaplugingpgsv2" src="www/cordovaplugingpgsv2.js">
+//        <clobbers target="GPGSv2" />
+//    </js-module>
 
     <engines>
         <engine name="cordova" version=">=9.0" />
