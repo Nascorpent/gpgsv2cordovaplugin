@@ -1,8 +1,21 @@
 {
     "name": "cordovaplugingpgsv2",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A Cordova plugin for Google Play Games Services v2",
-    "main": "./www/cordovaplugingpgsv2.js",
+    
     "author": "NascorpEnt",
-    "license": "MIT"
+    "license": "MIT",
+    "keywords": [
+        "cordova",
+        "plugin"
+      ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Nascorpent/gpgsv2cordovaplugin.git",
+        "directory": "google-play-games-v2"
+      },
+    "bugs": {
+        "url": "https://github.com/Nascorpent/gpgsv2cordovaplugin/issues"
+      },
+    "homepage": "https://github.com/Nascorpent/gpgsv2cordovaplugin/blob/main/google-play-games-v2/README.md"
   }

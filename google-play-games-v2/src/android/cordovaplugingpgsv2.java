@@ -23,8 +23,6 @@ import java.lang.Runnable;
 
 public class cordovaplugingpgsv2 extends CordovaPlugin {
 
-    private static final String EVENT_PLUGIN_ERROR = "GPG_pluginError";
-    private static final String EVENT_PLUGIN_SUCCESS = "GPG_pluginSuccess";
     private CordovaWebView cordovaWebView;
 
     @Override
@@ -69,19 +67,23 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                         // Usuário já autenticado
                         callbackContext.success("1");
                         sendSuccessToJavascript(callbackContext, "signIn", "User already authenticated");
+                        sendIsAuthenticatedToJavascript(callbackContext, true);
                     } else {
                         // Usuário não autenticado, iniciando o login interativo
                         gamesSignInClient.signIn().addOnCompleteListener(signInTask -> {
                             if (signInTask.isSuccessful()) {
                                 callbackContext.success("2");
                                 sendSuccessToJavascript(callbackContext, "signIn", "Sign-in successful");
+                                sendIsAuthenticatedToJavascript(callbackContext, true);
                             } else {
                                 getSignInError(callbackContext, signInTask.getException());
+                                sendIsAuthenticatedToJavascript(callbackContext, false);
                             }
                         });
                     }
                 } else {
                     sendErrorToJavascript(callbackContext, "signIn", isAuthenticatedTask.getException());
+                    sendIsAuthenticatedToJavascript(callbackContext, false);
                 }
             });
         });
@@ -100,6 +102,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                             playerData.put("displayName", displayName);
                             callbackContext.success(playerData);
                             sendSuccessToJavascript(callbackContext, "getPlayerId", "Player ID retrieved successfully");
+                            sendPlayerIdRetrievedToJavascript(callbackContext, playerId, displayName);
                         } catch (JSONException e) {
                             sendErrorToJavascript(callbackContext, "getPlayerId", e);
                         }
@@ -175,8 +178,10 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                             // Jogo salvo com sucesso
                             callbackContext.success();
                             sendSuccessToJavascript(callbackContext, "saveGame", "Game saved successfully");
+                            sendSaveGameCompleteToJavascript(callbackContext, true, snapshotName);
                         } else {
                             sendErrorToJavascript(callbackContext, "saveGame", task.getException());
+                            sendSaveGameCompleteToJavascript(callbackContext, false, snapshotName);
                         }
                     });
         });
@@ -212,8 +217,10 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                             String resultData = task.getResult();
                             callbackContext.success(resultData);
                             sendSuccessToJavascript(callbackContext, "loadGame", "Game loaded successfully");
+                            sendLoadGameCompleteToJavascript(callbackContext, true, snapshotName);
                         } else {
                             sendErrorToJavascript(callbackContext, "loadGame", task.getException());
+                            sendLoadGameCompleteToJavascript(callbackContext, false, snapshotName);
                         }
                     });
         });
@@ -223,7 +230,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         try {
             JSONObject error = new JSONObject();
             error.put("message", methodName + ": " + exception.getMessage());
-            emitWindowEvent(EVENT_PLUGIN_ERROR, error); // Envia o evento de erro
+            emitWindowEvent("GPG_pluginError", error); // Envia o evento de erro
 //            callbackContext.error(error); // Mantém o callbackContext.error para compatibilidade
         } catch (JSONException e) {
             // Falha ao criar objeto JSON para erro
@@ -235,11 +242,53 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         try {
             JSONObject success = new JSONObject();
             success.put("message", methodName + ": " + message);
-            emitWindowEvent(EVENT_PLUGIN_SUCCESS, success); // Envia o evento de sucesso
+            emitWindowEvent("GPG_pluginSuccess", success); // Envia o evento de sucesso
 //            callbackContext.success(success);
         } catch (JSONException e) {
             // Falha ao criar objeto JSON para sucesso
             callbackContext.error(methodName + ": Failed to create success message");
+        }
+    }
+
+    private void sendSaveGameCompleteToJavascript(CallbackContext callbackContext, boolean success, String snapshotName) {
+        try {
+            JSONObject eventData = new JSONObject();
+            eventData.put("success", success);
+            eventData.put("snapshotName", snapshotName);
+            emitWindowEvent("GPG_saveGameComplete", eventData);
+        } catch (JSONException e) {
+            callbackContext.error("saveGame: Failed to create event message");
+        }
+    }
+
+    private void sendLoadGameCompleteToJavascript(CallbackContext callbackContext, boolean success, String snapshotName) {
+        try {
+            JSONObject eventData = new JSONObject();
+            eventData.put("success", success);
+            eventData.put("snapshotName", snapshotName);
+            emitWindowEvent("GPG_loadGameComplete", eventData);
+        } catch (JSONException e) {
+            callbackContext.error("loadGame: Failed to create event message");
+        }
+    }
+
+    private void sendIsAuthenticatedToJavascript(CallbackContext callbackContext, boolean isAuthenticated) {
+        try {
+            JSONObject eventData = new JSONObject();
+            eventData.put("isAuthenticated", isAuthenticated);
+            emitWindowEvent("GPG_isAuthenticated", eventData);
+        } catch (JSONException e) {
+            callbackContext.error("isSignedIn: Failed to create event message");
+        }
+    }
+
+    private void sendPlayerIdRetrievedToJavascript(CallbackContext callbackContext, String playerId, String displayName) {
+        try {
+            JSONObject eventData = new JSONObject();eventData.put("playerId", playerId);
+            eventData.put("displayName", displayName);
+            emitWindowEvent("GPG_playerIdRetrieved", eventData);
+        } catch (JSONException e) {
+            callbackContext.error("getPlayerId: Failed to create event message");
         }
     }
 
