@@ -1,5 +1,3 @@
-cordova.define("cordovaplugingpgsv2.cordovaplugingpgsv2", function(require, exports, module) {
-  
   
   function callPlugin(name, params, onSuccess, onFailure) {
     cordova.exec(
@@ -61,4 +59,4 @@ cordova.define("cordovaplugingpgsv2.cordovaplugingpgsv2", function(require, expo
 //        console.log('Player ID retrieved:', event.playerId, event.displayName);
 //      }
 //  }
-});
+
