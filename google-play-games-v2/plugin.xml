@@ -1,16 +1,15 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordovaplugingpgsv2" version="1.0.0"
+<plugin id="cordovaplugingpgsv2" version="1.0.13"
     xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     >
-    <name>Google Play Games V2 Plugin by Nascorpent</name>
-
-
-//O Construct 3 já cria o módulo ao instalar o plugin no projeto.
-//    <js-module name="cordovaplugingpgsv2" src="www/cordovaplugingpgsv2.js">
-//        <clobbers target="GPGSv2" />
-//    </js-module>
+    <name>Google Play Games V2 Plugin by Nascorpent</name>    
+    
+<!--  O Construct 3 já cria o módulo ao instalar o plugin no projeto.
+       <js-module name="cordovaplugingpgsv2" src="www/cordovaplugingpgsv2.js">
+          <clobbers target="GPGSv2" />
+      </js-module> -->
 
     <engines>
         <engine name="cordova" version=">=9.0" />
@@ -30,13 +29,13 @@
             <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
         </config-file>
 
-        <config-file parent="/manifest/application" target="AndroidManifest.xml">
+        <config-file parent="/manifest/application" target="AndroidManifest.xml">            
             <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/game_services_project_id" />
             <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
         </config-file>
 
         <source-file src="src/android/cordovaplugingpgsv2.java" target-dir="src/com/nascorpent" />
-
+        
         <resource-file src="src/android/res/values/games-ids.xml" target="res/values/games-ids.xml" />
 
         <framework src="src/android/cordovaplugingpgsv2.gradle" custom="true" type="gradleReference" />
@@ -44,6 +43,12 @@
         <framework src="com.android.support:support-v4:+" />
 
         <framework src="com.android.support:recyclerview-v7:27.1.1" />
+        
+        <hook type="before_plugin_install" src="scripts/install_dependencies.js" />
+        <hook type="after_plugin_install" src="scripts/install.js" />
 
     </platform>
+    
+    
+
 </plugin>

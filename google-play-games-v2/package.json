@@ -1,7 +1,7 @@
 {
     "name": "cordovaplugingpgsv2",
-    "version": "1.0.3",
-    "description": "A Cordova plugin for Google Play Games Services v2, for Construct 3",
+    "version": "1.0.13",
+    "description": "A Cordova plugin designed to leverage Google Play Games Services v2, enabling seamless integration with the dedicated Construct 3 addon.",
     "main": "./www/cordovaplugingpgsv2.js",
     "author": "NascorpEnt",
     "license": "MIT",
@@ -17,5 +17,8 @@
     "bugs": {
         "url": "https://github.com/Nascorpent/gpgsv2cordovaplugin/issues"
       },
-    "homepage": "https://github.com/Nascorpent/gpgsv2cordovaplugin/blob/main/google-play-games-v2/README.md"
+    "homepage": "https://github.com/Nascorpent/gpgsv2cordovaplugin/blob/main/google-play-games-v2/README.md",
+    "dependencies": {        
+        "xml2js": "^0.4.23"
+    }
   }

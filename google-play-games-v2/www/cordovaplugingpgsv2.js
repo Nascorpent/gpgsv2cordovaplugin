@@ -1,62 +1,47 @@
-  
-  function callPlugin(name, params, onSuccess, onFailure) {
+ 
+  function callPlugin(name, params) {
     cordova.exec(
-      function callPluginSuccess(result) {
-        if (typeof onSuccess === 'function') {
-          onSuccess(result);
-        }
-      },function callPluginFailure(error) {
-        if (typeof onFailure === 'function') {
-          onFailure(error);
-        }
-      },
+      null,
+      null,
       'cordovaplugingpgsv2',
       name,
       params
     );
   }
 
-  exports.signIn = function () {return new Promise(function (resolve, reject) {
-      callPlugin('signIn', [], resolve, reject);
-    });
+  exports.isAuthenticated = function () {
+      callPlugin('isAuthenticated', []);
   };
 
-  exports.getPlayerId = function () {return new Promise(function (resolve, reject) {
-        callPlugin('getPlayerId', [], resolve, reject);
-      });
-    };
+  exports.signIn = function () {
+      callPlugin('signIn', []);
+  };
+
+  exports.getPlayerId = function () {
+      callPlugin('getPlayerId', []);
+  };
 
   exports.saveGame = function (snapshotName, data, description, timestamp) {
-    return new Promise(function (resolve, reject) {
-      callPlugin('saveGame', [snapshotName, data, description, timestamp], resolve, reject);
-    });
+      callPlugin('saveGame', [snapshotName, data, description, timestamp]);
   };
 
   exports.loadGame = function (snapshotName) {
-    return new Promise(function (resolve, reject) {
-      callPlugin('loadGame', [snapshotName], resolve, reject);
-    });
+      callPlugin('loadGame', [snapshotName]);
   };
 
 //  window.addEventListener('GPG_pluginError', handlePluginEvent);
-//  window.addEventListener('GPG_pluginSuccess', handlePluginEvent);
+//  window.addEventListener('GPG_signInResult', handlePluginEvent);
 //  window.addEventListener('GPG_saveGameComplete', handlePluginEvent);
 //  window.addEventListener('GPG_loadGameComplete', handlePluginEvent);
 //  window.addEventListener('GPG_isAuthenticated', handlePluginEvent);
+//  window.addEventListener('GPG_playerIdRetrieved', handlePluginEvent);
 
 //  function handlePluginEvent(event) {
 //    if (event.type === 'GPG_pluginError') {
-//      console.error('Erro no plugin:', event.message);
-//    } else if (event.type === 'GPG_pluginSuccess') {
-//      console.log('Sucesso no plugin:', event.message);
+//    } else if (event.type === 'GPG_signInResult') {
 //    } else if (event.type === 'GPG_saveGameComplete') {
-//      console.log('Save game complete:', event.success, event.snapshotName);
 //    } else if (event.type === 'GPG_loadGameComplete') {
-//      console.log('Load game complete:', event.success, event.snapshotName);
 //    } else if (event.type === 'GPG_isAuthenticated') {
-//      console.log('Is authenticated:', event.isAuthenticated);
 //    } else if (event.type === 'GPG_playerIdRetrieved') {
-//        console.log('Player ID retrieved:', event.playerId, event.displayName);
-//      }
+//    }
 //  }
-
