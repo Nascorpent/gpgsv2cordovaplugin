@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordovaplugingpgsv2" version="1.0.13"
+<plugin id="cordovaplugingpgsv2" version="1.0.15"
     xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -39,8 +39,6 @@
         <resource-file src="src/android/res/values/games-ids.xml" target="res/values/games-ids.xml" />
 
         <framework src="src/android/cordovaplugingpgsv2.gradle" custom="true" type="gradleReference" />
-
-        <framework src="com.android.support:support-v4:+" />
 
         <framework src="com.android.support:recyclerview-v7:27.1.1" />
         

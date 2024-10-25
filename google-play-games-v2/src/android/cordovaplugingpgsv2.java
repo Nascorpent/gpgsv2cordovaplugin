@@ -33,6 +33,7 @@ import java.util.Objects;
 
 public class cordovaplugingpgsv2 extends CordovaPlugin {
 
+
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
@@ -81,7 +82,19 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 boolean isAuthenticated = authResult.isAuthenticated();
                 sendIsAuthenticatedToJavascript(isAuthenticated);
             } else {
-                sendErrorToJavascript("isAuthenticated", Objects.requireNonNull(isAuthenticatedTask.getException()));
+                // Tratamento de erro diretamente aqui
+                try {
+                    Exception exception = isAuthenticatedTask.getException();
+                    if (exception instanceof ApiException apiException) {
+                        int statusCode = apiException.getStatusCode();
+                        String errorMessage = getErrorMessageForStatusCode(statusCode, "authentication");
+                        sendErrorToJavascript("GPG_isAuthenticated", new Exception(errorMessage));
+                    } else {
+                        sendErrorToJavascript("GPG_isAuthenticated", new Exception("An unexpected error occurred during authentication"));
+                    }
+                } catch (Exception e) {
+                    // Falha ao enviar erro para o JavaScript
+                }
                 sendIsAuthenticatedToJavascript(false);
             }
         }
@@ -101,28 +114,21 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 // Login bem-sucedido
                 sendSignInResultToJavascript(true);
             } else {
-                // Tratamento de erro
-                getSignInError(signInTask.getException());
+                // Tratamento de erro diretamente aqui
+                try {
+                    Exception exception = signInTask.getException();
+                    if (exception instanceof ApiException apiException) {
+                        int statusCode = apiException.getStatusCode();
+                        String errorMessage = getErrorMessageForStatusCode(statusCode, "signingIn");
+                        sendErrorToJavascript("GPG_signIn", new Exception(errorMessage));
+                    } else {
+                        sendErrorToJavascript("GPG_signIn", new Exception("An unexpected error occurred during sign-in"));
+                    }
+                } catch (Exception e) {
+                    // Falha ao enviar erro para o JavaScript
+                }
                 sendSignInResultToJavascript(false);
             }
-        }
-    }
-
-    private void getSignInError(Exception exception) {
-        try {
-            if (exception instanceof ApiException apiException) {
-                int statusCode = apiException.getStatusCode();
-                String errorMessage = switch (statusCode) {
-                    case GamesActivityResultCodes.RESULT_SIGN_IN_FAILED -> "Sign-in failed";
-                    case CommonStatusCodes.SIGN_IN_REQUIRED -> "Sign-in required";
-                    default -> "An unknown error occurred during sign-in";
-                };
-                sendErrorToJavascript("getSignInError", new Exception(errorMessage));
-            } else {
-                sendErrorToJavascript("getSignInError", new Exception("An unexpected error occurred during sign-in"));
-            }
-        } catch (Exception e) {
-            // Falha ao enviar erro para o JavaScript
         }
     }
 
@@ -143,10 +149,22 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                     playerData.put("displayName", displayName);
                     sendPlayerIdRetrievedToJavascript(playerId, displayName);
                 } catch (JSONException e) {
-                    sendErrorToJavascript("getPlayerId", e);
+                    sendErrorToJavascript("GPG_getPlayerId", e);
                 }
             } else {
-                sendErrorToJavascript("getPlayerId", Objects.requireNonNull(playerTask.getException()));
+                // Tratamento de erro diretamente aqui
+                try {
+                    Exception exception = playerTask.getException();
+                    if (exception instanceof ApiException apiException) {
+                        int statusCode = apiException.getStatusCode();
+                        String errorMessage = getErrorMessageForStatusCode(statusCode, "gettingPlayerId");
+                        sendErrorToJavascript("GPG_getPlayerId", new Exception(errorMessage));
+                    } else {
+                        sendErrorToJavascript("GPG_getPlayerId", new Exception("An unexpected error occurred while retrieving player ID"));
+                    }
+                } catch (Exception e) {
+                    // Falha ao enviar erro para o JavaScript
+                }
             }
         }
     }
@@ -202,7 +220,19 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             if (task.isSuccessful()) {
                 sendSaveGameCompleteToJavascript(true, snapshotName);
             } else {
-                sendErrorToJavascript("saveGame", Objects.requireNonNull(task.getException()));
+                // Tratamento de erro diretamente aqui
+                try {
+                    Exception exception = task.getException();
+                    if (exception instanceof ApiException apiException) {
+                        int statusCode = apiException.getStatusCode();
+                        String errorMessage = getErrorMessageForStatusCode(statusCode, "savingGame");
+                        sendErrorToJavascript("GPG_saveGame", new Exception(errorMessage));
+                    } else {
+                        sendErrorToJavascript("GPG_saveGame", new Exception("An unexpected error occurred while saving game"));
+                    }
+                } catch (Exception e) {
+                    // Falha ao enviar erro para o JavaScript
+                }
                 sendSaveGameCompleteToJavascript(false, snapshotName);
             }
         }
@@ -250,16 +280,39 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 String resultData = task.getResult();
                 sendLoadGameCompleteToJavascript(true, snapshotName, resultData);
             } else {
-                sendErrorToJavascript("loadGame", Objects.requireNonNull(task.getException()));
+                try {
+                    Exception exception = task.getException();
+                    if (exception instanceof ApiException apiException) {
+                        int statusCode = apiException.getStatusCode();
+                        String errorMessage = getErrorMessageForStatusCode(statusCode, "loadingGame");
+                        sendErrorToJavascript("GPG_loadGame", new Exception(errorMessage));
+                    } else {
+                        sendErrorToJavascript("GPG_loadGame", new Exception("An unexpected error occurred while loading game"));
+                    }
+                } catch (Exception e) {
+                    // Falha ao enviar erro para o JavaScript
+                }
                 sendLoadGameCompleteToJavascript(false, snapshotName, null);
             }
         }
+    }
+
+    private String getErrorMessageForStatusCode(int statusCode, String context) {
+        return switch (statusCode) {
+            case GamesActivityResultCodes.RESULT_SIGN_IN_FAILED -> "Sign-in failed";
+            case CommonStatusCodes.SIGN_IN_REQUIRED -> "Sign-in required";
+            case CommonStatusCodes.NETWORK_ERROR -> "Network error";
+            case CommonStatusCodes.TIMEOUT -> "Timeout";
+            case CommonStatusCodes.API_NOT_CONNECTED -> "API not connected";
+            default -> "An unknown error occurred during " + context;
+        };
     }
 
     private void sendErrorToJavascript(String methodName, @NonNull Exception exception) {
         try {
             JSONObject error = new JSONObject();
             error.put("message", methodName + ": " + exception.getMessage());
+            error.put("code", methodName);
             emitWindowEvent("GPG_pluginError", error);
         } catch (JSONException e) {
             Log.e("ERROR",methodName + ": Failed to create error message", e);
