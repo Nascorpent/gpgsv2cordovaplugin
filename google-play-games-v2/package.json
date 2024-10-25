@@ -1,6 +1,6 @@
 {
     "name": "cordovaplugingpgsv2",
-    "version": "1.0.15",
+    "version": "1.0.17",
     "description": "A Cordova plugin designed to leverage Google Play Games Services v2, enabling seamless integration with the dedicated Construct 3 addon.",
     "main": "./www/cordovaplugingpgsv2.js",
     "author": "NascorpEnt",

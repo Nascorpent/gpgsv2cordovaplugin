@@ -2,6 +2,6 @@ cdvPluginPostBuildExtras.add({
     dependencies {
         implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-        implementation "com.google.android.gms:play-services-games-v2:+"
+        implementation "com.google.android.gms:play-services-games-v2:+"        
     }
 });
