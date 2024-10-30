@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -43,6 +45,7 @@ import java.util.Objects;
 public class cordovaplugingpgsv2 extends CordovaPlugin {
 
     private static final String TAG = "GPGS_Plugin";
+    private boolean pgsVerification;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -63,20 +66,34 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             sendErrorToJavascript("GPG_initialize_GoogleServicesNotAvailable", "GPG_initialize_GoogleServicesNotAvailable", new Exception("GooglePlayServices not available"));
         }
 
-        SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
-        boolean pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
-        sendPGSVerificationPrefToJavascript(pgsVerification);
+        checkPGSVerification();
 
-        if(pgsVerification) {
-            Log.i(TAG, "pgsVerification TRUE");
-            isPlayGamesInstalled();
-        } else {
-            Log.i(TAG, "pgsVerification FALSE");
-        }
+        new Handler(Looper.getMainLooper()).postDelayed(this::isPlayGamesInstalled, 200);
+
     }
 
+    private void checkPGSVerification() {
+        cordova.getActivity().runOnUiThread(() -> {
+            SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
+            pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
+            Log.i(TAG, "PGS_VERIFICATION: " + pgsVerification);
+        });
+
+        sendPGSVerificationPrefToJavascript(pgsVerification);
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (pgsVerification) {
+                Log.i(TAG, "pgsVerification TRUE");
+                isPlayGamesInstalled();
+            } else {
+                Log.i(TAG, "pgsVerification FALSE");
+            }
+        }, 100);
+    }
+
+
     public boolean isPlayGamesInstalled() {
-        Context context = cordova.getActivity().getApplicationContext();
+        Context context = cordova.getActivity();
         if (context == null) {
             Log.e(TAG, "Context is null, cannot check if Play Games is installed");
             sendPGSAvailableToJavascript(false);
@@ -98,41 +115,53 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
     }
 
     public void setPGSverification(boolean enabled) {
-        Log.i(TAG, "pgsVerification Setting to " + enabled);
-        SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("PGS_VERIFICATION", enabled);
-        editor.apply();
+        cordova.getActivity().runOnUiThread(() -> {
+            SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean("PGS_VERIFICATION", enabled);
+            boolean commitSuccess = editor.commit();
+            Log.i(TAG, "Commit success: " + commitSuccess);
+        });
     }
 
     public void redirectToPlayGamesStore() {
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.play.games"));
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            cordova.getActivity().startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.play.games"));
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            cordova.getActivity().startActivity(intent);
-        }
+        cordova.getThreadPool().execute(() -> {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.play.games"));
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                cordova.getActivity().startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.play.games"));
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                cordova.getActivity().startActivity(intent);
+            }
+        });
     }
 
     @Override
     public void onResume(boolean multitasking) {
         super.onResume(true);
 
-        SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
-        boolean pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
+        cordova.getActivity().runOnUiThread(() -> {
+            SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
+            pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
+            Log.i(TAG, "PGS_VERIFICATION: " + pgsVerification);
+        });
 
-        if(pgsVerification) {
-            if (isPlayGamesInstalled()) {
-                Log.d(TAG, "Google Play Games está instalado após a tentativa de instalação.");
-                sendPGSInstallReturnToJavascript(true, "installed");
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (pgsVerification) {
+                if (isPlayGamesInstalled()) {
+                    Log.d(TAG, "Google Play Games está instalado após a tentativa de instalação.");
+                    sendPGSInstallReturnToJavascript(true, "installed");
+                } else {
+                    Log.e(TAG, "Google Play Games ainda não está instalado.");
+                    sendPGSInstallReturnToJavascript(true, "notinstaled");
+                }
             } else {
-                Log.e(TAG, "Google Play Games ainda não está instalado.");
-                sendPGSInstallReturnToJavascript(true, "notinstaled");
+                Log.i(TAG, "pgsVerification FALSE");
             }
-        }
+        }, 100);
+
     }
 
     @Override
