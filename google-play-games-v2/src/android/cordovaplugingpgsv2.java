@@ -61,6 +61,80 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
 
     }
 
+    @Override
+    public void onResume(boolean multitasking) {
+        super.onResume(true);
+
+        cordova.getActivity().runOnUiThread(() -> {
+            SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
+            pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
+            Log.i(TAG, "PGS_VERIFICATION: " + pgsVerification);
+        });
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (pgsVerification) {
+                if (isPlayGamesInstalled()) {
+                    Log.i(TAG, "Google Play Games está instalado após a tentativa de instalação.");
+                    sendPGSInstallReturnToJavascript(true, "installed");
+                } else {
+                    Log.i(TAG, "Google Play Games ainda não está instalado.");
+                    sendPGSInstallReturnToJavascript(false, "notinstaled");
+                }
+            } else {
+                Log.i(TAG, "pgsVerification FALSE");
+            }
+        }, 100);
+
+    }
+
+    @Override
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        return switch (action) {
+            case "signIn" -> {
+                this.signIn();
+                yield true;
+            }
+            case "isAuthenticated" -> {
+                this.isAuthenticated();
+                yield true;
+            }
+            case "getPlayerId" -> {
+                this.getPlayerId();
+                yield true;
+            }
+            case "saveGame" -> {
+                this.saveGame(args);
+                yield true;
+            }
+            case "loadGame" -> {
+                this.loadGame(args);
+                yield true;
+            }
+            case "playGames" -> {
+                this.redirectToPlayGamesStore();
+                yield true;
+            }
+            case "setPGSverification" -> {
+                boolean enabled = (boolean) args.get(0);
+                this.setPGSverification(enabled);
+                yield true;
+            }
+            case "checkGooglePlayServicesAvailability" -> {
+                this.checkGooglePlayServicesAvailability();
+                yield true;
+            }
+            case "checkPGSVerification" -> {
+                this.checkPGSVerification();
+                yield true;
+            }
+            case "checkPGSVerificationWithoutPrefs" -> {
+                this.checkPGSVerificationWithoutPrefs();
+                yield true;
+            }
+            default -> false;
+        };
+    }
+
     private void checkGooglePlayServicesAvailability() {
         int googleApiAvailabilityCode = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(cordova.getActivity());
 
@@ -143,81 +217,6 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         });
     }
 
-    @Override
-    public void onResume(boolean multitasking) {
-        super.onResume(true);
-
-        cordova.getActivity().runOnUiThread(() -> {
-            SharedPreferences preferences = cordova.getActivity().getSharedPreferences("GamePrefs", Context.MODE_PRIVATE);
-            pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
-            Log.i(TAG, "PGS_VERIFICATION: " + pgsVerification);
-        });
-
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (pgsVerification) {
-                if (isPlayGamesInstalled()) {
-                    Log.i(TAG, "Google Play Games está instalado após a tentativa de instalação.");
-                    sendPGSInstallReturnToJavascript(true, "installed");
-                } else {
-                    Log.i(TAG, "Google Play Games ainda não está instalado.");
-                    sendPGSInstallReturnToJavascript(false, "notinstaled");
-                }
-            } else {
-                Log.i(TAG, "pgsVerification FALSE");
-            }
-        }, 100);
-
-    }
-
-    @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        return switch (action) {
-            case "signIn" -> {
-                this.signIn();
-                yield true;
-            }
-            case "isAuthenticated" -> {
-                this.isAuthenticated();
-                yield true;
-            }
-            case "getPlayerId" -> {
-                this.getPlayerId();
-                yield true;
-            }
-            case "saveGame" -> {
-                this.saveGame(args);
-                yield true;
-            }
-            case "loadGame" -> {
-                this.loadGame(args);
-                yield true;
-            }
-            case "playGames" -> {
-                this.redirectToPlayGamesStore();
-                yield true;
-            }
-            case "setPGSverification" -> {
-                boolean enabled = (boolean) args.get(0);
-                this.setPGSverification(enabled);
-                yield true;
-            }
-            case "checkGooglePlayServicesAvailability" -> {
-                this.checkGooglePlayServicesAvailability();
-                yield true;
-            }
-            case "checkPGSVerification" -> {
-                this.checkPGSVerification();
-                yield true;
-            }
-            case "checkPGSVerificationWithoutPrefs" -> {
-                this.checkPGSVerificationWithoutPrefs();
-                yield true;
-            }
-            default -> false;
-        };
-    }
-
-
     private void isAuthenticated() {
         cordova.getActivity().runOnUiThread(() -> {
             GamesSignInClient gamesSignInClient = PlayGames.getGamesSignInClient(cordova.getActivity());
@@ -294,15 +293,21 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             if (playerTask.isSuccessful()) {
                 String playerId = playerTask.getResult().getPlayerId();
                 String displayName = playerTask.getResult().getDisplayName();
+                boolean result = true;
                 try {
                     JSONObject playerData = new JSONObject();
                     playerData.put("playerId", playerId);
                     playerData.put("displayName", displayName);
-                    sendPlayerIdRetrievedToJavascript(playerId, displayName);
+                    playerData.put("result", result);
+                    sendPlayerIdRetrievedToJavascript(playerId, displayName, result);
                 } catch (JSONException e) {
                     sendErrorToJavascript("GPG_getPlayerId", null , e);
                 }
             } else {
+                String playerId = "NotValid";
+                String displayName = "NotValid";
+                boolean result = false;
+                sendPlayerIdRetrievedToJavascript(playerId, displayName, result);
                 try {
                     Exception exception = playerTask.getException();
                     if (exception instanceof ApiException apiException) {
@@ -558,11 +563,12 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         }
     }
 
-    private void sendPlayerIdRetrievedToJavascript(String playerId, String displayName) {
+    private void sendPlayerIdRetrievedToJavascript(String playerId, String displayName, boolean result) {
         try {
             JSONObject eventData = new JSONObject();
             eventData.put("playerId", playerId);
             eventData.put("displayName", displayName);
+            eventData.put("playerIdResult", result);
             emitWindowEvent("GPG_playerIdRetrieved", eventData);
         } catch (JSONException e) {
             Log.w(TAG,"getPlayerId: Failed to create event message", e);
