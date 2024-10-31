@@ -45,7 +45,7 @@ import java.util.Objects;
 public class cordovaplugingpgsv2 extends CordovaPlugin {
 
     private static final String TAG = "GPGS_Plugin";
-    private boolean pgsVerification;
+    public boolean pgsVerification;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -53,23 +53,29 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
 
         PlayGamesSdk.initialize(cordova.getActivity());
 
+//        checkGooglePlayServicesAvailability();
+//
+//        checkPGSVerification();
+//
+//        checkPGSVerificationWithoutPrefs();
+
+    }
+
+    private void checkGooglePlayServicesAvailability() {
         int googleApiAvailabilityCode = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(cordova.getActivity());
 
         if (googleApiAvailabilityCode == ConnectionResult.SUCCESS) {
             Log.d(TAG, "GooglePlayServices available");
             sendGSAvailableToJavascript(true);
         } else {
-            Log.w(TAG, String.format("GooglePlayServices not available. Error: '" +
-                    GoogleApiAvailability.getInstance().getErrorString(googleApiAvailabilityCode) +
-                    "'. Error Code: " + googleApiAvailabilityCode));
+            Log.w(TAG, "GooglePlayServices not available. Error code: " + googleApiAvailabilityCode);
             sendGSAvailableToJavascript(false);
             sendErrorToJavascript("GPG_initialize_GoogleServicesNotAvailable", "GPG_initialize_GoogleServicesNotAvailable", new Exception("GooglePlayServices not available"));
         }
+    }
 
-        checkPGSVerification();
-
-        new Handler(Looper.getMainLooper()).postDelayed(this::isPlayGamesInstalled, 200);
-
+    private void checkPGSVerificationWithoutPrefs() {
+        new Handler(Looper.getMainLooper()).postDelayed(this::isPlayGamesInstalled, 500);
     }
 
     private void checkPGSVerification() {
@@ -78,15 +84,14 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             pgsVerification = preferences.getBoolean("PGS_VERIFICATION", true);
             Log.i(TAG, "PGS_VERIFICATION: " + pgsVerification);
         });
-
-        sendPGSVerificationPrefToJavascript(pgsVerification);
-
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (pgsVerification) {
                 Log.i(TAG, "pgsVerification TRUE");
+                sendPGSVerificationPrefToJavascript(true);
                 isPlayGamesInstalled();
             } else {
                 Log.i(TAG, "pgsVerification FALSE");
+                sendPGSVerificationPrefToJavascript(false);
             }
         }, 100);
     }
@@ -95,7 +100,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
     public boolean isPlayGamesInstalled() {
         Context context = cordova.getActivity();
         if (context == null) {
-            Log.e(TAG, "Context is null, cannot check if Play Games is installed");
+            Log.i(TAG, "Context is null, cannot check if Play Games is installed");
             sendPGSAvailableToJavascript(false);
             sendErrorToJavascript("GPG_initialize_ContextNull", "Context is null", new Exception("Context is null"));
             return false;
@@ -107,7 +112,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             sendPGSAvailableToJavascript(true);
             return true;
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Google Play Games not installed");
+            Log.i(TAG, "Google Play Games not installed");
             sendPGSAvailableToJavascript(false);
             sendErrorToJavascript("GPG_initialize_PlayGamesNotAvailable", "Google Play Games not available", e);
             return false;
@@ -151,11 +156,11 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (pgsVerification) {
                 if (isPlayGamesInstalled()) {
-                    Log.d(TAG, "Google Play Games está instalado após a tentativa de instalação.");
+                    Log.i(TAG, "Google Play Games está instalado após a tentativa de instalação.");
                     sendPGSInstallReturnToJavascript(true, "installed");
                 } else {
-                    Log.e(TAG, "Google Play Games ainda não está instalado.");
-                    sendPGSInstallReturnToJavascript(true, "notinstaled");
+                    Log.i(TAG, "Google Play Games ainda não está instalado.");
+                    sendPGSInstallReturnToJavascript(false, "notinstaled");
                 }
             } else {
                 Log.i(TAG, "pgsVerification FALSE");
@@ -196,6 +201,18 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 this.setPGSverification(enabled);
                 yield true;
             }
+            case "checkGooglePlayServicesAvailability" -> {
+                this.checkGooglePlayServicesAvailability();
+                yield true;
+            }
+            case "checkPGSVerification" -> {
+                this.checkPGSVerification();
+                yield true;
+            }
+            case "checkPGSVerificationWithoutPrefs" -> {
+                this.checkPGSVerificationWithoutPrefs();
+                yield true;
+            }
             default -> false;
         };
     }
@@ -224,7 +241,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                         int statusCode = apiException.getStatusCode();
                         String errorMessage = getErrorMessageForStatusCode(statusCode, "authentication");
                         sendErrorToJavascript("GPG_isAuthenticated", null , new Exception(errorMessage));
-                        Log.e(TAG, "PlayGamesSdk initialization failed", exception);
+                        Log.i(TAG, "PlayGamesSdk initialization failed", exception);
                     } else {
                         sendErrorToJavascript("GPG_isAuthenticated", null , new Exception("An unexpected error occurred during authentication"));
                     }
@@ -451,9 +468,9 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 error.put("initializeError", false);
             }
             emitWindowEvent("GPG_pluginError", error);
-            Log.e(TAG,methodName, exception);
+            Log.w(TAG,methodName, exception);
         } catch (JSONException e) {
-            Log.e(TAG,methodName + ": Failed to create error message", e);
+            Log.w(TAG,methodName + ": Failed to create error message", e);
         }
     }
 
@@ -464,7 +481,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("snapshotName", snapshotName);
             emitWindowEvent("GPG_saveGameComplete", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"saveGame: Failed to create event message", e);
+            Log.w(TAG,"saveGame: Failed to create event message", e);
         }
     }
 
@@ -476,7 +493,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("savedGame", savedGame);
             emitWindowEvent("GPG_loadGameComplete", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"loadGame: Failed to create event message", e);
+            Log.w(TAG,"loadGame: Failed to create event message", e);
         }
     }
 
@@ -486,7 +503,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("isAuthenticated", isAuthenticated);
             emitWindowEvent("GPG_isAuthenticated", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"isAuthenticated: Failed to create event message", e);
+            Log.w(TAG,"isAuthenticated: Failed to create event message", e);
         }
     }
 
@@ -496,7 +513,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("isAvailable", isGSAvailable);
             emitWindowEvent("GPG_isGSAvailable", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"isAvailable: Failed to create event message", e);
+            Log.w(TAG,"isAvailable: Failed to create event message", e);
         }
     }
 
@@ -506,7 +523,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("isAvailable", isPGSAvailable);
             emitWindowEvent("GPG_isPGSAvailable", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"isAvailable: Failed to create event message", e);
+            Log.w(TAG,"isAvailable: Failed to create event message", e);
         }
     }
 
@@ -517,7 +534,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("Result", result);
             emitWindowEvent("GPG_PGSInstallReturn", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"PGSInstallReturn: Failed to create event message", e);
+            Log.w(TAG,"PGSInstallReturn: Failed to create event message", e);
         }
     }
 
@@ -527,7 +544,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("PGSPref", PGSPref);
             emitWindowEvent("GPG_PGSPref", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"PGSPref: Failed to create event message", e);
+            Log.w(TAG,"PGSPref: Failed to create event message", e);
         }
     }
 
@@ -537,7 +554,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("signInResult", result);
             emitWindowEvent("GPG_signInResult", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"isSignedIn: Failed to create event message", e);
+            Log.w(TAG,"isSignedIn: Failed to create event message", e);
         }
     }
 
@@ -548,7 +565,7 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             eventData.put("displayName", displayName);
             emitWindowEvent("GPG_playerIdRetrieved", eventData);
         } catch (JSONException e) {
-            Log.e(TAG,"getPlayerId: Failed to create event message", e);
+            Log.w(TAG,"getPlayerId: Failed to create event message", e);
         }
     }
 
