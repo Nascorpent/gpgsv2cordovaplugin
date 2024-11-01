@@ -51,13 +51,17 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
 
-        PlayGamesSdk.initialize(cordova.getActivity());
+        //this.cordova.getActivity().runOnUiThread(() -> PlayGamesSdk.initialize(cordova.getActivity()));
 
-//        checkGooglePlayServicesAvailability();
-//
-//        checkPGSVerification();
-//
-//        checkPGSVerificationWithoutPrefs();
+    }
+
+    @Override
+    protected void pluginInitialize() {
+        Log.i(TAG, "Starting plugin");
+        this.cordova.getActivity().runOnUiThread(() -> {
+            PlayGamesSdk.initialize(cordova.getActivity());
+            Log.i(TAG, "PlayGamesSdk initialized");
+        });
 
     }
 
@@ -230,7 +234,6 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
             if (isAuthenticatedTask.isSuccessful()) {
                 AuthenticationResult authResult = isAuthenticatedTask.getResult();
                 boolean isAuthenticated = authResult.isAuthenticated();
-                Log.d(TAG, "PlayGamesSdk initialized successfully");
                 sendIsAuthenticatedToJavascript(isAuthenticated);
             } else {
                 // Tratamento de erro diretamente aqui
@@ -247,7 +250,9 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                 } catch (Exception e) {
                     // Falha ao enviar erro para o JavaScript
                 }
-                sendIsAuthenticatedToJavascript(false);
+                AuthenticationResult authResult = isAuthenticatedTask.getResult();
+                boolean isAuthenticated = authResult.isAuthenticated();
+                sendIsAuthenticatedToJavascript(isAuthenticated);
             }
         }
     }
@@ -263,7 +268,10 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
         @Override
         public void onComplete(@NonNull Task<AuthenticationResult> signInTask) {
             if (signInTask.isSuccessful()) {
-                sendSignInResultToJavascript(true);
+                cordova.getActivity().runOnUiThread(() -> {
+                    GamesSignInClient gamesSignInClient = PlayGames.getGamesSignInClient(cordova.getActivity());
+                    gamesSignInClient.isAuthenticated().addOnCompleteListener(new SignInAuthenticationCompleteListener());
+                });
             } else {
                 try {
                     Exception exception = signInTask.getException();
@@ -273,6 +281,32 @@ public class cordovaplugingpgsv2 extends CordovaPlugin {
                         sendErrorToJavascript("GPG_signIn", null , new Exception(errorMessage));
                     } else {
                         sendErrorToJavascript("GPG_signIn", null , new Exception("An unexpected error occurred during sign-in"));
+                    }
+                } catch (Exception e) {
+                    // Falha ao enviar erro para o JavaScript
+                }
+                    sendSignInResultToJavascript(signInTask.isSuccessful());
+            }
+        }
+    }
+
+    private class SignInAuthenticationCompleteListener implements OnCompleteListener<AuthenticationResult> {
+        @Override
+        public void onComplete(@NonNull Task<AuthenticationResult> isAuthenticatedTask) {
+            if (isAuthenticatedTask.isSuccessful()) {
+                AuthenticationResult authResult = isAuthenticatedTask.getResult();
+                boolean isAuthenticated = authResult.isAuthenticated();
+                sendSignInResultToJavascript(isAuthenticated);
+            } else {
+                try {
+                    Exception exception = isAuthenticatedTask.getException();
+                    if (exception instanceof ApiException apiException) {
+                        int statusCode = apiException.getStatusCode();
+                        String errorMessage = getErrorMessageForStatusCode(statusCode, "authentication");
+                        sendErrorToJavascript("GPG_signIn", null , new Exception(errorMessage));
+                        Log.i(TAG, "PlayGamesSdk initialization failed", exception);
+                    } else {
+                        sendErrorToJavascript("GPG_signIn", null , new Exception("An unexpected error occurred during authentication"));
                     }
                 } catch (Exception e) {
                     // Falha ao enviar erro para o JavaScript
